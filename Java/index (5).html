@@ -1,0 +1,572 @@
+<html>
+
+<head>
+  <title>CS11 Java - Lab 6</title>
+</head>
+
+<body>
+<h2>Java Lab 6:  Surfing the Web</h2>
+<!-- <i>Due Wednesday, February 21, 12:00pm.</i> -->
+<hr />
+
+<h3>Goals</h3>
+
+<p>
+  In this lab, you get to write a rudimentary <b>web crawler</b>.  Your crawler
+  will automatically download web pages from the internet, search for new links
+  within those pages, and repeat.  This week's crawler will be just about the
+  simplest one imaginable:  it will simply look for new URLs (web page
+  locations) on each page, collect them and print them out at the end.  More
+  sophisticated web crawlers are used to do things like index the Internet's
+  content or scavenge for email addresses to spam; if you've ever used a
+  <a href="http://www.google.com">search engine</a>, you've queried against the
+  data that a web crawler generated.
+</p>
+
+<h3>Terminology</h3>
+
+<ul>
+
+  <li>
+    <p>
+      <b>URL</b>: Uniform Resource Locator.  This is a web page address.  For
+      our purposes, it consists of the string <tt>"http://"</tt>, followed
+      by the location of the web server (<i>e.g.</i>
+      <tt>"www.cs.caltech.edu"</tt>), followed by the path of the web page
+      on the server (<i>e.g.</i> <tt>"/courses/cs11"</tt>).  If the last
+      name in the path doesn't end in ".html" then the actual web page is
+      provided by the server.  It can be <tt>"index.html"</tt>,
+      <tt>"index.shtml"</tt>, <tt>"index.php"</tt>,
+      <tt>"default.htm"</tt>, or anything else the web-server considers to
+      be the "default" document for a particular directory.
+    </p>
+
+    <p>
+      <i>Note:</i> There are other kinds of valid URLs as well, starting with
+      (for instance) <tt>"mailto://"</tt> or <tt>"ftp://"</tt>.  We
+      won't bother with these for this assignment.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      <b>HTTP</b>: HyperText Transfer Protocol.  This is a standard text-based
+      protocol used for transmitting web page data over the internet.  The
+      latest specification of HTTP is version 1.1, which is the version we'll be
+      using.  An HTTP query to download the contents of the web page at
+      <pre>  http://www.cs.caltech.edu/courses/cs11</pre>
+
+      would look like:
+
+<pre>
+  GET /courses/cs11 HTTP/1.1
+  Host: www.cs.caltech.edu
+  Connection: close
+  <font color="red">[extra blank line here]</font></pre>
+
+      Note that the HTTP request <b>MUST</b> end with a blank line, or the
+      request will be ignored.  Also note the capitalization; if you try to send
+      "<tt>Get</tt>" or "<tt>host</tt>", the webserver will not be happy with
+      you.
+    </p>
+    <p>
+      Some URLs don't specify a document or resource to retrieve, such as the
+      URL "<tt>http://www.caltech.edu</tt>".  In these cases, you <b>must</b>
+      still specify "<tt>/</tt>" as the resource to retrieve.  In other words,
+      the requested resource will <em>always</em> start with a <tt>/</tt>
+      character.
+    </p>
+  </li>
+    
+  <li>
+    <p>
+      <b>Socket</b>:  A socket is a resource provided by the operating system
+      that allows you to communicate with other computers over a network.
+      You can use a socket to establish a connection with a webserver, but you
+      must use a TCP socket, and "speak" the HTTP protocol for the server to
+      respond.
+    </p>
+  </li>
+    
+  <li>
+    <p>
+      <b>Port</b>:  Multiple different programs on the same server can listen
+      for connections, by listening on different ports.  Each port is designated
+      with a number in the range 1..65535; 1 through 1024 are reserved for the
+      operating system.  Most kinds of servers have a default port; for HTTP
+      connections we normally use port 80.
+    </p>
+  </li>
+</ul>
+
+<h3>Program To Write</h3>
+
+<p>
+  Here is the specification of the program you are to write.
+</p>
+
+<ol>
+  <li>
+    <p>
+      The program should accept two parameters on the command line:
+    </p>
+
+    <ol>
+      <li>a string representing the URL at which to start browsing</li>
+      <li>
+        a positive integer representing a maximum search depth (see below)
+      </li>
+    </ol>
+
+    <p>
+      If the correct arguments are not supplied, the program should immediately
+      stop and print out a usage message <i>e.g.</i>
+      
+      <pre>  usage: java Crawler &lt;URL&gt; &lt;depth&gt;</pre>
+    </p>
+
+    <p>
+      (To learn more about processing command-line arguments in Java, you
+      can read <a href="../java-main.html">this page</a>.)
+    </p>
+  </li>
+  
+  <li>
+    <p>
+      The program should store the URL as a <tt>String</tt> along with its
+      depth (which is 0 to start).  You should create a special class to
+      represent [URL, depth] pairs.
+    </p>
+  </li>
+  
+  <li>
+    <p>
+      The program should connect to the given site within the URL on port 80
+      using a <tt>Socket</tt> (see below) and request the specified web page,
+    </p>
+  </li>
+  
+  <li>
+    <p>
+      The program should parse the returned text, if any, line by line for any
+      substrings which have the format:
+    </p>
+
+    <pre>  &lt;a href="[<i>any URL starting with</i> <tt>http://</tt>]"></pre>
+
+    <p>
+      Found URLs should be stored, along with a new depth value in a
+      <tt>LinkedList</tt> of (URL, depth) pairs (see below for more about
+      <tt>LinkedList</tt>s).  The new depth value should be one more than the
+      depth value of the URL corresponding to the page being parsed.
+    </p>
+  </li>
+  
+  <li>
+    <p>The program should then close the socket connection to the host.</p>
+  </li>
+
+  <li>
+    <p>
+      The program should then repeat steps 3 to 6 on each new URL, as long as
+      the depth corresponding to the URL is less than the maximum depth.  Note
+      that when a particular URL is retrieved and searched, the search depth
+      goes up by 1.  If a URL's depth has reached the maximum depth (or
+      greater), do not retrieve or search that web page.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Finally, the program should print out all the URLs visited along with
+      their search depths.
+    </p>
+  </li>
+</ol>
+
+<h3>Assumptions</h3>
+
+<ul>
+  <li>
+    <p>
+      It is somewhat difficult to parse, much less connect, to all of the
+      properly- and improperly-formed hyperlinks on the web.  Assume that each
+      link reference is well-formed, with a fully-qualified host name, a
+      resource path, and all of the above surrounded by double-quotes.  You may
+      wish to build a small sample site of your own for testing purposes, or
+      you're welcome to start with
+      <a href="http://www.cs.caltech.edu/~donnie/testcrawl">this little one
+      here</a>.  Also, surprisingly, there are several large websites that have
+      many URLs of this form; you can try <u>http://slashdot.org/</u>, or
+      <u>http://www.nytimes.com</u>.  (The trailing slash on slashdot.org is
+      important, by the way...)
+    </p>
+
+    <p>
+      Note that one of the more common kinds of URL that will not be acceptable
+      are ones that start with something other than "http://"; common examples
+      include "mailto://" and "ftp://".  If you find these you should ignore
+      them.
+    </p>
+  </li>
+  
+  <li>
+    <p>
+<!--
+      Assume that a site needs at most two seconds to respond to your GET query,
+      and then assume that when your <tt>BufferedReader</tt> no longer
+      indicates it is <tt>ready()</tt> that the site has finished sending
+      you the page.  (This is not always the case in real life, of course!)
+-->
+      Assume that when your <tt>BufferedReader</tt> returns <tt>null</tt>, the
+      server has completed sending the web page.  This may in fact not be true
+      for very slow web servers, but for our purposes it should be quite
+      acceptable.
+    </p>
+  </li>
+</ul>
+
+<h3>Useful classes and methods</h3>
+
+<p>
+  As always, see the Java API for more details.  These classes and methods
+  should get you started.  Note that most of these methods throw various kinds
+  of exceptions, which you will have to handle.  Again, see the Java API to
+  find out what they are.
+</p>
+
+<h3><tt>Socket</tt></h3>
+
+<p>
+  To use <tt>Socket</tt>s you have to include this line in your program:
+</p>
+
+<pre>  import java.net.*;</pre>
+
+<h4>Constructor</h4>
+
+<p>
+  <tt>Socket(String host, int port)</tt> creates a new <tt>Socket</tt> from a
+  <tt>String</tt> representing the host and a port number, and makes the
+  connection.
+</p>
+
+<h4>Methods</h4>
+
+<ul>
+  <li>
+    <p>
+      <tt>void setSoTimeout(int timeout)</tt> sets the timeout of the
+      <tt>Socket</tt> in milliseconds.  You should call this after creating the
+      <tt>Socket</tt> so it knows how long to wait for data transfers from the
+      other side.  Otherwise it will wait forever, which is probably not a good
+      idea if we want an efficient crawler.
+    </p>
+  </li>
+  
+  <li>
+    <p>
+      <tt>InputStream getInputStream()</tt> returns an <tt>InputStream</tt>
+      associated with the <tt>Socket</tt>.  This allows the <tt>Socket</tt> to
+      receive data from the other side of the connection.
+    </p>
+  </li>
+  
+  <li>
+    <p>
+      <tt>OutputStream getOutputStream()</tt> returns an <tt>OutputStream</tt>
+      associated with the <tt>Socket</tt>.  This allows the <tt>Socket</tt> to
+      send data to the other side of the connection.
+    </p>
+  </li>
+
+  <li>
+    <p><tt>void close()</tt> closes the <tt>Socket</tt>.</p>
+  </li>
+</ul>
+
+<h3>Streams</h3>
+
+<p>
+To use streams you have to include this line in your program:
+</p>
+
+<pre>  import java.io.*;</pre>
+
+<p>
+  To use <tt>Socket</tt>s effectively, you will want to convert the
+  <tt>InputStream</tt> and <tt>OutputStream</tt> associated with the
+  <tt>Socket</tt> to something more usable.  <tt>InputStream</tt> and
+  <tt>OutputStream</tt> instances are very primitive objects; they can only read
+  <tt>byte</tt>s or arrays of <tt>byte</tt>s (not even <tt>char</tt>s).  Since
+  you want to read and write characters, you have to have objects that convert
+  between <tt>byte</tt>s and <tt>char</tt>s and print whole lines.
+  Unfortunately, the Java API does this in somewhat different ways for input and
+  output.
+</p>
+
+<h4>Input Streams</h4>
+
+<p>
+  For input streams you can use the <tt>InputStreamReader</tt> classes as
+  follows:
+</p>
+
+<pre>  InputStreamReader in = new InputStreamReader(my_socket.getInputStream());</pre>
+
+<p>
+  Now <tt>in</tt> is an <tt>InputStreamReader</tt> which can read characters
+  from the <tt>Socket</tt>.  However, this still isn't very friendly because
+  you still have to work with individual <tt>char</tt>s or arrays of
+  <tt>char</tt>s.  It would be nice to be able to read in whole lines.  For
+  this you can use the <tt>BufferedReader</tt> class.  You can create a
+  <tt>BufferedReader</tt> given an <tt>InputStreamReader</tt> instance and then
+  call the <tt>readLine</tt> method of the <tt>BufferedReader</tt>.  This will
+  read in a whole line from the other end of the socket.
+<!--
+  You should also use the <tt>ready</tt> method of the <tt>BufferedReader</tt>
+  to check that the input stream is capable of reading data (this is not
+  guaranteed when using a socket).
+-->
+</p>
+
+<h4>Output Streams</h4>
+
+<p>
+  Output streams are a bit simpler.  You can create a <tt>PrintWriter</tt>
+  instance directly from the socket's <tt>OutputStream</tt> object and then
+  call its <tt>println</tt> method to send a line of text to the other end
+  of the socket.  You should use this constructor:
+</p>
+
+<pre>  PrintWriter(OutputStream out, boolean autoFlush)</pre>
+
+<p>
+  with <tt>autoFlush</tt> set to <tt>true</tt>.  This will flush the
+  output buffer after each <tt>println</tt>.
+</p>
+
+<h3><tt>String</tt> methods</h3>
+
+<p>
+  You'll find these <tt>String</tt> methods useful.  See the API for
+  documentation.
+</p>
+
+<ul>
+  <li><tt>boolean equals(Object anObject)</tt></li>
+  <li><tt>String substring(int beginIndex)</tt></li>
+  <li><tt>String substring(int beginIndex, int endIndex)</tt></li>
+  <li><tt>boolean startsWith(String prefix)</tt></li>
+</ul>
+
+<p>
+  <b>NOTE:</b> Do not use <tt>==</tt> to compare <tt>Strings</tt> for equality!
+  It will only return <tt>true</tt> if the two <tt>Strings</tt> are the same
+  object.  If you want to compare the contents of the two <tt>String</tt>s, use
+  the <tt>equals</tt> method.
+</p>
+
+<h3><tt>List</tt>s</h3>
+
+<p>
+  <tt>List</tt>s are very much like arrays of <tt>Object</tt>s except that they
+  can expand or contract easily and as needed, and they don't have the
+  bracket-notation for looking up individual items.  To use <tt>List</tt>s you
+  have to include this line in your program:
+</p>
+
+<pre>  import java.util.*;</pre>
+
+<p>
+  You should store the (URL, depth) pairs in a <tt>LinkedList</tt>, which is a
+  specific implementation of <tt>List</tt>.  Create one like this:
+</p>
+
+<pre>  LinkedList&lt;URLDepthPair&gt; myList = new LinkedList&lt;URLDepthPair&gt;();</pre>
+
+<p>
+  and then see the API for lots of useful methods on <tt>List</tt>s and the
+  different implementations of <tt>Lists</tt>.  (Specifically, you will notice
+  that different implementations of <tt>List</tt> provide different features.
+  This is why <tt>LinkedList</tt> is recommended; a few of its features are
+  particularly well-suited to this assignment.)
+</p>
+
+<p>
+  The special syntax for creating a <tt>LinkedList</tt> above, is making use of
+  the new
+  <a href="http://java.sun.com/j2se/1.5.0/docs/guide/language/generics.html">Java
+  1.5 generics</a> support.  This special syntax means that you don't have to
+  cast objects that you store or retrieve from the list, which will save you a
+  few headaches.
+</p>
+
+<h3>Exceptions</h3>
+
+<p>
+  When you find something that looks like a URL but doesn't start with
+  "<tt>http://</tt>", you should throw a <tt>MalformedURLException</tt>, which
+  is part of the Java API.
+</p>
+
+<h2>Design Advice</h2>
+
+<p>
+  Here are some design guidelines for the implementation of your web crawler.
+  (Not doing these things usually results in redos... <em>hint hint!</em>)
+</p>
+
+<h3>URL-Depth Pairs</h3>
+
+<p>
+  As mentioned above, you should create a special <tt>URLDepthPair</tt> class,
+  each instance of which includes a <tt>String</tt> field representing a URL and
+  an <tt>int</tt> representing a search depth.  You should also have a
+  <tt>toString</tt> method which will print out the contents of the pair.  This
+  makes outputting the results of your web-crawl much easier.
+</p>
+
+<p>
+  Individual URLs need to be broken apart into their components.  This URL
+  parsing and manipulation should be part of the URL-depth pair class you
+  create.  Good object-oriented design dictates that if a particular class is
+  going to store a certain kind of data, then any manipulation of that data
+  should also be implemented in that class.  So, if you write any functions to
+  break a URL apart, or to check if a URL is valid, put it in this class!
+</p>
+
+<h3>Crawlers</h3>
+
+<p>
+  As mentioned above, you should design a <tt>Crawler</tt> class which will
+  implement the main functionality of the application.  This class should have a
+  <tt>getSites</tt> method that will return a list of all URL-depth pairs that
+  have been visited.  You can call this in your <tt>main</tt> method once
+  crawling is completed; retrieve the list, then iterate through it and print
+  all of the URLs.
+</p>
+
+<p>
+  The easiest way to keep track of the sites visited is to have two lists, one
+  for all the sites seen so far, and one that only includes sites that have not
+  yet been processed.  You should iterate through all the sites that haven't
+  been processed, removing each site before you download its contents, and every
+  time you find a new URL you should put it into the not-processed list.  When
+  the not-processed list is empty then you're all done - you've found all the
+  sites.
+</p>
+
+<p>
+  Although you might think to yourself, "Opening a socket on a URL is an
+  operation involving the URL, and should therefore be implemented on the
+  URL-depth pair class," that would be a little too specialized for the
+  purposes of the pair class.  It is really just a place to store URLs and
+  depth values, with a few extra utilities provided.  The crawler is the
+  class that is navigating web pages and searching for URLs, so the crawler
+  class should contain the code that actually opens and closes sockets.
+</p>
+
+<p>
+  You will need to create a new <tt>Socket</tt> instance for each URL that you
+  are downloading text from.  Make sure to close the socket when you are
+  finished scanning that webpage, so that the operating system doesn't run out
+  of networking resources!  (There are only so many sockets that a computer can
+  keep open at once.)  Also, don't use recursion to search more deeply nested
+  web pages; implement this functionality as a loop.  This will also make your
+  web crawler much more efficient as far as resource usage is concerned.
+</p>
+
+<h3>Constants!</h3>
+
+<p>
+  Your program will undoubtedly have strings like <tt>"http://"</tt> and 
+  <tt>"a href=\""</tt> in it, and you will probably be tempted to just repeat
+  these strings wherever you need them.  Also, you will need these lengths for
+  various string operations, so you will also be tempted to hard-code the
+  lengths of these strings into your code.  <b><em>Don't do this!!!</em></b>  It
+  makes for <em>very</em> unmaintainable code!  If you make a typo, or later
+  change how you search, you will have to update many different lines of code.
+</p>
+
+<p>
+  Instead, create <tt>String</tt> constants in your classes.  For example, you
+  might have this:
+</p>
+
+<pre>    public static final String URL_PREFIX = "http://";</pre>
+
+<p>
+  Now, if you need this string, instead of directly hard-coding it, just use the
+  <tt>URL_PREFIX</tt> constant.  If you need its length, you are in luck -
+  <tt>URL_PREFIX</tt> is a <tt>String</tt> object, so you can call
+  <tt>URL_PREFIX.length()</tt> and get its length back.
+</p>
+
+<p>
+  You should also think about where you put these constants.  You should
+  only have each constant appear once in your whole project, and you should put
+  the constant where it makes the most sense.  For example, since the URL prefix
+  is necessary to tell if a URL is valid, you should put that constant in your
+  URL-depth pair class.  If you have another constant for HTML links, put that
+  into your crawler class.  If the crawler ever needs the URL prefix, it can
+  simply refer to the URL-depth pair constant, instead of duplicating that
+  constant itself.
+</p>
+
+<h2>Extra Credit</h2>
+
+<ul>
+  <li>
+    <p>
+      Add code to only add sites to the not-processed list if they haven't been
+      seen before.
+    </p>
+  </li>
+  
+  <li>
+    <p>
+      Extend your crawler's hyperlink-finding capabilities by using a
+      <a href="http://java.sun.com/j2se/1.4/docs/api/java/util/regex/package-summary.html">regular-expression</a>
+      search on your gathered data.  You'll also need more logic to decide what
+      machine to connect to next.  Your crawler should then be able to navigate
+      links on <a href="http://www.google.com">various</a>
+      <a href="http://www.slashdot.org">popular</a>
+      <a href="http://www.caltech.edu">sites</a>.  Using regular expressions
+      requires more knowledge but is actually much easier than manually
+      searching for substrings in strings (and <b>much</b> more powerful).
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Create a pool of five (or more!) crawlers, each in its own thread, each of
+      which can receive a URL to browse and each of which will return a
+      <tt>list</tt> of links when finished.  Send new URLs to this pool as soon
+      as each becomes available.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Extend your multi-threaded crawler to search to depth 1,000,000.  Store
+      the results of each crawl in a database via JDBC, and make note of how
+      many times each particular unique page is referred to by the others.
+      Include an intelligent algorithm to "find the meaning" in each page by
+      weighting words and phrases on the basis of repetitiveness, proximity to
+      the beginning of paragraphs and sections, font size or header style, and
+      meta keywords, at least.
+    </p>
+  </li>
+</ul>
+
+<hr />
+<font size="-1">
+  [end lab 6]
+  Copyright (C) 2003-2008, California Institute of Technology.<br />
+  Last updated February 19, 2008
+</font>
+
+</body>
+</html>
+

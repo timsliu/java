@@ -1,0 +1,7 @@
+This set is three programs:
+
+1) hello1.java - prints out hello world
+
+2) hello2.java - loops printing out hello world, printing a different greeting depending on if the iteration is odd or even.
+
+3) hello3.java - accepts user input and prints hello with a name input

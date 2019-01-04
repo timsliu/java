@@ -1,0 +1,246 @@
+<html>
+
+<head>
+  <title>CS11 Java - Lab 4</title>
+</head>
+
+<body>
+
+<h2>Lab 4:  Choosing and Saving Fractals</h2>
+<!-- <i>Due Monday, November 6, 12:00pm.</i> -->
+
+<p>
+This week you will extend your Fractal Explorer with two new features.  First,
+you will add support for multiple fractals, and allow the user to select which
+fractal to display via a dropdown combo-box.  Second, you will add support for
+saving the current fractal image into a data file.  Here is a screenshot of
+what your new program will look like:
+</p>
+
+<p align="center"><img src="lab4.png" /></p>
+
+<p>
+The top of the Fractal Explorer now includes two widgets to let the user
+select a fractal, and the bottom includes a new "Save" button to save the
+current fractal image.
+</p>
+
+<p>
+Since there will now be multiple action-event sources, you can practice
+handling all of these sources with a single <tt>ActionListener</tt>
+implementation in your class.
+</p>
+
+<h2>Supporting Multiple Fractals</h2>
+
+<p>
+It is very easy to add multiple fractals to your Fractal Explorer, particularly
+because we introduced the <tt>FractalGenerator</tt> abstraction in our initial
+implementation.  This week you will add support for multiple fractals, and the
+user can choose between them using a <em>combo-box</em>.  This is a very common
+"UI metaphor" (i.e. an interaction style that users are already familiar with
+from many different user interfaces), so it should be very easy for people to
+understand.  The Swing API provides combo-boxes via the
+<tt>javax.swing.JComboBox</tt> class, and better yet, it fires
+<tt>ActionEvent</tt>s when a new item is selected.  Here is what you need to do:
+</p>
+
+<ul>
+<li>
+  <p>Create two new <tt>FractalGenerator</tt> implementations.</p>
+
+  <p>
+  The first will be the <em>tricorn</em> fractal, and should go in a file
+  <tt>Tricorn.java</tt>.  As before, you should subclass
+  <tt>FractalGenerator</tt>, and the implementation will be very nearly
+  identical to the Mandelbrot fractal, except for two changes.  In fact, you
+  might even copy the Mandelbrot source code, and just make the following
+  tweaks.
+  </p>
+  <ul>
+    <li>The equation is <em>z<sub>n</sub></em> = <span style="text-decoration: overline"><em>z</em></span><sub><em>n</em>-1</sub><sup>2</sup> + <em>c</em>.
+        The only difference here is that we take the complex conjugate of
+        <em>z</em><sub><em>n</em>-1</sub> each iteration.
+    </li>
+    <li>The initial range for the tricorn fractal should be (-2, -2) to
+        (2, 2).</li>
+  </ul>
+
+  <p>
+  The second fractal to implement is the "Burning Ship" fractal, which does
+  in fact look very similar to a burning ship.  The details are as follows:
+  </p>
+  <ul>
+    <li>The equation is <em>z<sub>n</sub></em> = (|Re(<em>z</em><sub><em>n</em>-1</sub>)| + <em>i</em> |Im(<em>z</em><sub><em>n</em>-1</sub>)|)<sup>2</sup> + <em>c</em>.  In other words, you take the absolute value of each component
+    of <em>z</em><sub><em>n</em>-1</sub> each iteration.</li>
+    <li>The initial range for this fractal should be (-2, -2.5) to (2, 1.5).</li>
+  </ul>
+</li>
+
+<li>
+  Swing combo-boxes can manage a collection of objects, but the objects must
+  provide an implementation of <tt>toString()</tt>.  Make sure to provide an
+  implementation of <tt>toString()</tt> on each of the fractal implementations,
+  that returns the name, e.g. "Mandelbrot", "Tricorn", and "Burning Ship".
+</li>
+
+<li>
+  <p>
+  It is very easy to set up a <tt>JComboBox</tt> in your user interface.  You
+  can use the no-argument constructor, and then use the <tt>addItem(Object)</tt>
+  method to add each of your <tt>FractalGenerator</tt> implementations.  As
+  stated in the previous step, the combo-box will use the <tt>toString()</tt>
+  method on your implementations to display the generators in the combo-box.
+  </p>
+
+  <p>
+  You should also put a <em>label</em> into your user interface, before the
+  combo-box, to explain what the combo-box is for.  You can do this by creating
+  a new <tt>JPanel</tt> object, adding a <tt>JLabel</tt> object and a
+  <tt>JComboBox</tt> object to it, and then putting the panel into your frame
+  at the <tt>NORTH</tt> position in the frame's layout.
+  </p>
+
+  <p>
+  Finally, you need to add support for your combo-box to your
+  <tt>ActionListener</tt> implementation.  You can check whether the combo-box
+  is the source of the action-event, and if it is, you can retrieve the
+  currently selected item from the widget and set it to be the current fractal
+  generator.  (You can use the <tt>getSelectedItem()</tt> method for this.)
+  Don't forget to reset the initial range and redraw the fractal!
+  </p>
+</li>
+</ul>
+
+<p>
+So that you can verify your work, here are the initial images for the Tricorn
+and Burning Ship fractals:
+</p>
+
+<p align="center">
+<img src="tricorn.png" alt="Tricorn Fractal" />
+<img src="ship.png" alt="Burning Ship Fractal" />
+</p>
+
+<h2>Saving the Fractal Image</h2>
+
+<p>
+Your other task for this week is to save the current fractal image to disk.
+This might sound like a daunting task, but the Java API provides several tools
+to make this very straightforward to implement.
+</p>
+
+<ul>
+<li>
+  <p>
+  The first thing you need to do to add this feature is to add a "Save Image"
+  button to your display.  You can put both the Save and Reset buttons into a
+  new <tt>JPanel</tt>, and then put this panel in the <tt>SOUTH</tt> region of
+  the frame, similar to the way you added the label and combo-box.  (Note:
+  Don't accidentally use the same panel object in both places, or you will get
+  very strange results!)
+  </p>
+
+  <p>
+  The Save button will also need to have its action-events handled by your
+  <tt>ActionListener</tt> implementation.  You should give your Save and Reset
+  buttons each their own action-command value (e.g. "save" and "reset"), so
+  that the action-handler can distinguish between the two buttons.
+  </p>
+</li>
+
+<li>
+  <p>
+  In your "Save button" handler, you need to allow the user to specify what
+  file they are going to save the image into!  You can do this with the
+  <tt>javax.swing.JFileChooser</tt> class, which makes it very easy.  This
+  class provides a method <tt>showSaveDialog()</tt>, which pops up a "Save file"
+  dialog allowing the user to select what directory and file to save to.  The
+  method takes a graphics <tt>Component</tt> that is the parent of the chooser;
+  this simply allows the chooser to be centered with respect to its parent.  Use
+  the application's frame as the parent.
+  </p>
+  <p>
+  You will also notice that this method returns an <tt>int</tt> value,
+  specifying the outcome of the file-selection operation.  If the method returns
+  <tt>JFileChooser.APPROVE_OPTION</tt> then you can go ahead with the file-save
+  operation; otherwise, the user has canceled the request, so just return.
+  If the user did select a place to save the file, it is available via the
+  <tt>getSelectedFile()</tt> method, as a <tt>File</tt> object.
+  </p>
+</li>
+
+<li>
+  <p>
+  You will also want to set up the file chooser to only save PNG images; that
+  is the only format you will support for now.  You can do this with the
+  <tt>javax.swing.filechooser.FileNameExtensionFilter</tt>, with a snippet of
+  code like this:
+  </p>
+
+  <pre>  JFileChooser chooser = new JFileChooser();
+  FileFilter filter = new FileNameExtensionFilter("PNG Images", "png");
+  chooser.setFileFilter(filter);
+  chooser.setAcceptAllFileFilterUsed(false);</pre>
+
+  <p>
+  The final line ensures that the chooser won't allow non-".png" filenames to
+  be used.
+  </p>
+</li>
+
+<li>
+  <p>
+  If the user has successfully selected a file, the next step is to save the
+  fractal image to disk!  This would also be very complicated, except that
+  again Java already includes this functionality.  The
+  <tt>javax.imageio.ImageIO</tt> class provides simple image loading and
+  storage operations; you can use the <tt>write(RenderedImage im,
+  String formatName, File output)</tt> version.  The format will be "png".  The
+  "RenderedImage" is simply the <tt>BufferedImage</tt> instance from your
+  <tt>JImageDisplay</tt> component.  (You will need to provide a public
+  accessor for this member.)
+  </p>
+
+  <p>
+  Of course, you will also notice that the <tt>write()</tt> method might throw
+  an exception, so you need to wrap this call in a <tt>try/catch</tt> block and
+  handle the potential error.  Your <tt>catch</tt> block should inform the user
+  of the error using a dialog window.  Again, Swing provides the
+  <tt>javax.swing.JOptionPane</tt> class to simplify the process of creating
+  informational dialogs, or getting yes/no input.  In this case, you can use the
+  <tt>JOptionPane.showMessageDialog(Component parent, Object message, String title, int messageType)</tt> static method, with a message-type of
+  <tt>JOptionPane.ERROR_MESSAGE</tt>.  Your error message can be what the
+  exception returns from its <tt>getMessage()</tt> method, and the title can be
+  something descriptive like "Cannot Save Image".  As before, the parent
+  component should be the frame, so that the error dialog is properly centered
+  within the frame.
+  </p>
+</li>
+
+</ul>
+
+<p>
+Once you are done with these features, give them a try!  You should now be able
+to explore the various fractals and see them in all their beauty, and you should
+also be able to save the images of what you see to disk.  You can also try out
+your error-handling code by trying to save an image to a file that already
+exists but is read-only, or perhaps to a read-only drive like a CD.  Or, you
+can try saving to a file whose name is actually a directory in the target
+folder.
+</p>
+
+<p>
+Once you are convinced that everything works, submit your files to csman.
+</p>
+
+<hr />
+
+<font size="-1">
+  Updated May 8, 2012.
+  Copyright (C) 2011-2012, California Institute of Technology.
+</font>
+
+</body>
+</html>
+

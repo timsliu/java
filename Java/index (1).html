@@ -1,0 +1,370 @@
+<html>
+<head>
+  <title>CS11 Java - Lab 2</title>
+
+  <style type="text/css">
+    li { margin-top: 0.5em; margin-bottom: 0.5em; }
+  </style>
+</head>
+
+<body>
+<h2>CS11 Java Lab 2:  I'm A Star!</h2>
+
+<p>
+If you have ever played any kind of map-based game on the computer, you have
+probably encountered computer-controlled units that know how to get from point
+A to point B all by themselves.  This is actually a common problem in both
+games and other kinds of software, how to generate a path from a starting
+location to a desired destination that successfully navigates obstacles.
+</p>
+
+<p>
+One very widely used algorithm for this kind of problem is called A*
+(pronounced "A-star"), and it is a very effective algorithm for pathfinding in
+a computer program.  The algorithm is conceptually pretty simple.  Starting
+with the initial location, it incrementally builds a path from the source to
+the destination, always using the "best path so far" to take the next step.
+This ensures that the final path will also be the optimal one.  (If you want
+to learn much more about the A* pathfinding algorithm, you can start with the
+<a href="http://en.wikipedia.org/wiki/A%2A">Wikipedia article on A*</a>, and
+follow the references the article gives.)
+</p>
+
+<p>
+Fortunately, you don't have to implement the A* algorithm; this has already
+been done for you.  In fact, there is even a nice little user interface for
+you to experiment with the A* algorithm:
+</p>
+
+<p align="center">
+  <img src="pathfinder.png" />
+</p>
+
+<p>
+You can click on the various squares to turn them into barriers (red) or
+passable cells (white).  The blue cells mark the start and end of the path.
+Clicking on the "Find Path" button will compute a path using A*, and then
+display it in green.  Or, if there is no path from start to end, the program
+will simply not show any path.
+</p>
+
+<p>
+The A* algorithm has a lot of information to keep track of, and the Java
+collection classes are perfect for this kind of task.  There are two main
+kinds of information that this A* implementation must manage:
+</p>
+
+<ul>
+  <li>
+    <b>Locations</b> are simply the sets of coordinates of specific cells on the
+    two-dimensional map.  The A* algorithm must be able to refer to specific
+    locations in the map.
+  </li>
+
+  <li>
+    <b>Waypoints</b> are individual steps in the path that the A* algorithm
+    generates.  For example, the above path in green is simply a sequence of
+    waypoints through the map.  Each waypoint has several pieces of information
+    associated with it:
+    <ul>
+      <li>The location of the cell that the waypoint is for.</li>
+      <li>
+        A reference to the previous waypoint in the path.  The final path is
+        simply a sequence of waypoints from the destination back to the starting
+        point.
+      </li>
+      <li>
+        The actual cost of moving from the starting location to this waypoint's
+        location, following the specific path ending with the waypoint.
+      </li>
+      <li>
+        A heuristic estimate (a <em>guess</em>, in other words) of the remaining
+        cost of traveling from this location to the final destination.
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<p>
+As the A* algorithm builds its path, it must maintain two primary collections of
+waypoints:
+</p>
+
+<ul>
+  <li>
+    The first collection stores "open waypoints," or waypoints that still need
+    to be considered by the A* algorithm.
+  </li>
+
+  <li>
+    The second collection stores "closed waypoints," or waypoints that have
+    already been considered by the A* algorithm and don't need to be examined
+    again.
+  </li>
+</ul>
+
+<p>
+  Each iteration of the A* algorithm is pretty simple:  find the least costly
+  waypoint from the set of open waypoints, take a step in every direction from
+  that waypoint to generate new open waypoints, and then move the waypoint from
+  the open set to the closed set.  This is repeated until the current waypoint
+  happens to be at the destination!  If, during this process, the algorithm
+  runs out of open waypoints, there is no path from the starting point to the
+  destination.
+</p>
+
+<p>
+  This processing depends primarily on the locations of waypoints, so it is
+  very useful to store waypoints as mappings from locations to their
+  corresponding waypoints.  Thus, you will use the <tt>java.util.HashMap</tt>
+  container for each of these collections, with <tt>Location</tt> objects as the
+  keys, and <tt>Waypoint</tt> objects as the values.
+</p>
+
+<h3>Before You Begin</h3>
+
+Before you begin, you should download the source files for this lab assignment:
+
+<ul>
+  <li>
+    <a href="Map2D.java"><tt>Map2D.java</tt></a> - represents the map that the
+    A* algorithm navigates, including whether cells are passable or not
+  </li>
+
+  <li>
+    <a href="Location.java"><tt>Location.java</tt></a> - this class represents
+    the coordinates of a specific cell on the map
+  </li>
+  <li>
+    <a href="Waypoint.java"><tt>Waypoint.java</tt></a> - represents individual
+    waypoints in the generated path
+  </li>
+
+  <li>
+    <a href="AStarPathfinder.java"><tt>AStarPathfinder.java</tt></a> - this
+    class implements the A* pathfinding algorithm as a static method
+  </li>
+  <li>
+    <a href="AStarState.java"><tt>AStarState.java</tt></a> - this class stores
+    the collections of open waypoints and closed waypoints, and provides basic
+    operations necessary for the functioning of the A* algorithm
+  </li>
+
+
+  <li>
+    <a href="AStarApp.java"><tt>AStarApp.java</tt></a> - a simple Swing
+    application that provides an editable view of a 2D map, and initiates
+    pathfinding when requested
+  </li>
+  <li>
+    <a href="JMapCell.java"><tt>JMapCell.java</tt></a> - this is a custom Swing
+    component that is used to display the state of cells in the map
+  </li>
+</ul>
+
+<p>
+  Note that the application will compile successfully as-is, but the
+  path-finding functionality won't work until you complete the assignment.
+</p>
+
+<p>
+  The only classes you should have to edit will be <b><tt>Location</tt></b> and
+  <b><tt>AStarState</tt></b>.  Everything else is framework code that allows
+  you to edit the map and display the path that the algorithm generates.  (If
+  you find yourself editing any of the other source files to get the lab to
+  work then stop and ask for help!)
+</p>
+
+<h3>Locations</h3>
+
+<p>
+  The first thing that needs to be done is that the <tt>Location</tt> class
+  must be prepared for use with the Java collection classes.  Since you will
+  be using hashing containers for this assignment, this involves:
+</p>
+
+<ul>
+  <li>Providing an implementation of the <tt>equals()</tt> method.</li>
+  <li>Providing an implementation of the <tt>hashCode()</tt> method.</li>
+</ul>
+
+<p>
+  Add an implementation of each of these methods to the <tt>Location</tt>
+  class, following the patterns outlined in class.  Once this is completed,
+  you can use the <tt>Location</tt> class as a key type in hashing
+  containers like <tt>HashSet</tt> and <tt>HashMap</tt>.
+</p>
+
+<h3>A* State</h3>
+
+<p>
+  Once the <tt>Location</tt> class is ready to use as a key, you can finish the
+  implementation of the <tt>AStarState</tt> class.  This is the class that
+  maintains the sets of open and closed waypoints, so it really provides the
+  core functionality for the A* implementation.
+</p>
+
+<p>
+As mentioned previously, the A* state consists of two collections of waypoints,
+one of open waypoints, and the other of closed waypoints.  To facilitate the
+algorithm, waypoints will be stored in a hash-map, with the waypoint locations
+being the keys and the waypoints themselves being the values.  Thus, you will
+have a type like this:
+</p>
+
+<pre>    HashMap&lt;Location, Waypoint&gt;</pre>
+
+<p>
+(An obvious implication of this is that each map location can have only one
+waypoint associated with it.  This is exactly what we want.)
+</p>
+
+<p>
+Add two (non-static) fields to the <tt>AStarState</tt> class with this type, one
+for "open waypoints" and the other for "closed waypoints."  Also, make sure to
+initialize each of these fields to refer to a new, empty collection.
+</p>
+
+</p>
+  Once you have the fields set up and initialized properly, you will need to
+  implement the following methods on the <tt>AStarState</tt> class:
+</p>
+
+<ol>
+
+  <li>
+    <p><b><tt>public int numOpenWaypoints()</tt></b></p>
+
+    <p>
+      This method should simply return the number of waypoints in the collection
+      of open waypoints.  (Yep it'll be a one-liner...)
+    </p>
+  </li>
+
+  <li>
+    <p><b><tt>public Waypoint getMinOpenWaypoint()</tt></b></p>
+
+    <p>
+      This function should scan through all waypoints in the collection of open
+      waypoints, and return a reference to the waypoint with the
+      <em>smallest</em> total cost.  If there are no waypoints in the "open"
+      collection, return <tt>null</tt>.
+    </p>
+
+    <p>
+      Don't remove the waypoint from the collection when you return it; just
+      return a reference to the waypoint with the smallest total cost.
+    </p>
+  </li>
+
+  <li>
+    <p><b><tt>public boolean addOpenWaypoint(Waypoint newWP)</tt></b></p>
+
+    <p>
+      This is the most complicated method in the A* state class, but honestly it
+      is still pretty simple.  What makes it more complicated than the rest is
+      that it should only add the specified waypoint if an existing waypoint at
+      the location is <em>worse</em> than the new one.  Here is what the method
+      must do:
+    </p>
+
+    <ul>
+      <li>
+        If there is currently no waypoint for this location in the "open
+        waypoints" collection then just add the new waypoint.
+      </li>
+      <li>
+        <p>
+          If there is <em>already</em> a waypoint for this location in the "open
+          waypoints" collection, then only add the new waypoint if the "previous
+          cost" for the new waypoint is less than the "previous cost" for the
+          current waypoint.  (Make sure to use the <em>previous</em> cost and
+          not the <em>total</em> cost.)  In other words, if the new waypoint
+          represents a shorter path to that location than the current waypoint
+          does, replace the current waypoint with the new one.
+        </p>
+      </li>
+    </ul>
+
+    <p>
+      You can see that you will have to retrieve the existing waypoint from the
+      "open" collection, if there is one, and act accordingly.  Fortunately, it
+      is very simple to replace a previous waypoint with a new one; just use the
+      <tt>HashMap.put()</tt> method like usual, and it will replace the old
+      key-value mapping with the new one.
+    </p>
+
+    <p>
+      Finally, have this method return <tt>true</tt> if the new waypoint was
+      added to the collection of open waypoints, or <tt>false</tt> if the new
+      waypoint wasn't actually added.
+    </p>
+  </li>
+
+  <li>
+    <p><b><tt>public boolean isLocationClosed(Location loc)</tt></b></p>
+
+    <p>
+      This function should return <tt>true</tt> if the specified location
+      appears in the collection of closed waypoints, or false otherwise.  Since
+      the closed waypoints are stored in a hash-map with locations as the key
+      values, this should be quite simple to implement.
+    </p>
+  </li>
+
+  <li>
+    <p><b><tt>public void closeWaypoint(Location loc)</tt></b></p>
+
+    <p>
+      This function takes a waypoint and moves it from the collection of open
+      waypoints to the collection of closed waypoints.  Since waypoints are
+      keyed by their location, the method takes the location of the waypoint.
+    </p>
+    <p>
+      The process should be simple:
+    </p>
+    <ul>
+      <li>
+        Remove the waypoint corresponding to the specified location from the
+        collection of open waypoints.
+      </li>
+      <li>
+        Add the waypoint you just removed, to the collection of closed
+        waypoints.  Of course, the key should be the location of the waypoint.
+      </li>
+    </ul>
+  </li>
+
+</ol>
+
+<h3>Compiling and Testing</h3>
+
+<p>
+  Once you get the above functionality implemented, give the pathfinding program
+  a run to see if it works properly.  If you have implemented everything
+  correctly, you shouldn't have any problem creating obstacles and then finding
+  paths around them.
+</p>
+
+<p>
+You can compile and run the program the same way as always:
+</p>
+
+<pre>
+    javac *.java
+    java AStarApp</pre>
+
+<p>
+  After you have convinced yourself that everything works correctly, go ahead
+  and submit your work via <a href="https://csman.cs.caltech.edu">csman</a>!
+</p>
+
+<hr />
+<font size="-1">
+  Copyright (C) 2007-2011, California Institute of Technology.<br />
+  Last updated April 14, 2011.
+</font>
+
+</body>
+</html>
+

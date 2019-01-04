@@ -1,0 +1,429 @@
+<html>
+
+<head>
+  <title>CS11 Java - Lab 3</title>
+  <style>
+  li { padding-bottom: 8pt; }
+  </style>
+</head>
+
+<body>
+
+<h2>Java Lab 3:  Fractal Explorer</h2>
+
+<p>
+For the next few labs you will put together a fun little Java application that
+can draw some amazing fractals.  If you have never played with fractals before,
+you will be amazed at how easy it is to create some breathtakingly beautiful
+images.  We will do this all with the Swing Framework, the Java API that allows
+you to create graphical user interfaces.
+</p>
+
+<p>
+We will be building this application over multiple labs, so our initial version
+will be pretty simple, but we will build it up over the next few labs to
+include some neat features, like being able to save the images we generate, and
+being able to switch between different kinds of fractals.  Both the GUI itself
+and the mechanism for supporting different fractals will depend on class
+hierarchies.
+</p>
+
+<p>
+Here is a simple example of the GUI in its initial state:
+</p>
+
+<p align="center">
+  <img src="explorer.png" />
+</p>
+
+<p>
+And, here are some interesting areas of the fractal:  elephants and seahorses!
+</p>
+
+<p align="center">
+  <img src="elephants.png" /> <img src="seahorses.png" />
+</p>
+
+<h2>Creating the User Interface</h2>
+
+<p>
+Before we can draw any fractals, we'll need to create a graphics widget that
+will allow us to display them.  Swing doesn't provide such a component, but it
+is very easy to create one ourselves.  Note that we will be using a wide range
+of Java AWT and Swing classes in this lab, and there is simply no way we can
+explain the details of each one.  However, there is no need to, because the
+online <a href="http://docs.oracle.com/javase/6/docs/api/">Java API docs</a>
+are very comprehensive and easy to use.  Just navigate to the package of a
+given Java class, select the class itself, and then read the detailed
+information about how to use the class.
+</p>
+
+<ul>
+  <li>
+    Create a class <tt>JImageDisplay</tt> that derives from
+    <tt>javax.swing.JComponent</tt>.  The class should have one private field,
+    an instance of a <tt>java.awt.image.BufferedImage</tt>.  The
+    <tt>BufferedImage</tt> class manages an image whose contents we can
+    actually write to.
+  </li>
+
+  <li>
+    <p>
+    The <tt>JImageDisplay</tt> constructor should take an integer width and
+    height, and initialize its <tt>BufferedImage</tt> member to be a new image
+    of that width and height, and an image-type of <tt>TYPE_INT_RGB</tt>.  The
+    type simply specifies how each pixel's colors are represented in the image;
+    this particular value means that the red, green, and blue components are
+    each 8 bits, and they appear in the int in that order.
+    </p>
+    <p>
+    Your constructor must do one other thing too:  it must call the parent
+    class' <tt>setPreferredSize()</tt> method with the specified width and
+    height.  (You will have to pass these values in a
+    <tt>java.awt.Dimension</tt> object you create specifically for this call.)
+    This way, when your component is included in the user interface, it will
+    actually display the entire image.
+    </p>
+  </li>
+
+  <li>
+    Custom Swing components must provide their own drawing code by overriding
+    the <tt>protected paintComponent(Graphics g)</tt> method of
+    <tt>JComponent</tt>.  Since our component will simply display the image
+    data itself, our implementation will be very simple!  First, the superclass
+    <tt>paintComponent(g)</tt> implementation must <u>always</u> be called, so
+    that any borders or other features are drawn properly.  Once you have
+    called the superclass version, you can draw the image into the component
+    using an operation like this:
+    <pre>  g.drawImage(image, 0, 0, image.getWidth(), image.getHeight(), null);</pre>
+    (We are passing <tt>null</tt> for the <tt>ImageObserver</tt>, since we
+    don't need that functionality.)
+  </li>
+
+  <li>
+    You also need to provide two public methods for writing data into the
+    image:  a <tt>clearImage()</tt> method that sets all pixels in the image
+    data to black (RGB value 0), and a <tt>drawPixel(int x, int y,
+    int rgbColor)</tt> method that sets a pixel to have a specific color.
+    Both of these methods will need to use one of the <tt>setRGB()</tt> methods
+    on the <tt>BufferedImage</tt> class.
+  </li>
+
+  <li>
+    Of course, don't forget to write clear, complete and concise documentation
+    for your class and methods, explaining what everything does.
+  </li>
+</ul>
+
+<h2>Computing the Mandelbrot Fractal</h2>
+
+<p>
+Next you will write the code to compute the very well-known Mandelbrot fractal.
+In order to support multiple fractals in the future, you are provided with the
+<a href="FractalGenerator.java"><tt>FractalGenerator.java</tt></a> source file,
+which all of your fractal generators will derive from.  You will also notice
+that some very helpful operations are provided to translate from screen
+coordinates into the coordinate-system of the fractal being computed.
+</p>
+
+<p>
+The kinds of fractals we will be working with are computed in the complex plane,
+and involve very simple mathematical functions that are iterated repeatedly
+until some condition is satisfied.  For the Mandelbrot fractal, the function is
+<em>z<sub>n</sub></em> = <em>z</em><sub><em>n</em>-1</sub><sup>2</sup> +
+<em>c</em>, where all values are complex numbers, <em>z</em><sub>0</sub> = 0,
+and <em>c</em> is the particular point in the fractal that we are displaying.
+This computation is iterated until either |<em>z</em>| > 2 (in which case the
+point is not in the Mandelbrot set), or until the number of iterations hits a
+maximum value, e.g. 2000 (in which case we assume the point is in the set).
+</p>
+
+<p>
+The process of plotting the Mandelbrot set is very simple:  we simply iterate
+over each pixel in our image, compute the number of iterations for the
+corresponding coordinate, and then set the pixel to a color based on the number
+of iterations we computed.  But, we will get to this in a second - for now, you
+simply need to implement the above computation.
+</p>
+
+<ul>
+  <li>
+    Create a subclass of <tt>FractalGenerator</tt> called <tt>Mandelbrot</tt>.
+    You will see that there are only two methods that you need to provide in
+    the subclass, <tt>getInitialRange()</tt> and <tt>numIterations()</tt>.
+  </li>
+
+  <li>
+    The <tt>getInitialRange(Rectangle2D.Double)</tt> method simply allows the
+    fractal generator to specify what part of the complex plane is the most
+    "interesting" for a particular fractal.  Note that the rectangle object is
+    passed as an argument to the method, and the method must modify the
+    rectangle's fields to reflect the proper initial range for the fractal.
+    (You can see an example of this in the
+    <tt>FractalGenerator.recenterAndZoomRange()</tt> method.)  The
+    <tt>Mandelbrot</tt> implementation of this method should set the initial
+    range to (-2 - 1.5<em>i</em>) - (1 + 1.5<em>i</em>).  That is, the
+    <em>x</em> and <em>y</em> values will be -2 and -1.5 respectively, and the
+    width and height will both be 3.
+  </li>
+
+  <li>
+    <p>
+    The <tt>numIterations(double, double)</tt> method will implement the
+    iterative function for the Mandelbrot fractal.  You can define a constant
+    for the "maximum iterations" like this:
+    <pre>  public static final int MAX_ITERATIONS = 2000;</pre>
+    Then you can refer to this value in your implementation.
+    </p>
+    <p>
+    Note that Java has no data type for complex numbers, so you will need to
+    implement the iterative function using separate <tt>double</tt> components
+    for the real and imaginary parts.  (I suppose you could implement your own
+    complex number class, but that will probably not be worth it.)  You should
+    try to make your implementation fast; for example, don't compare
+    |<em>z</em>| to 2; compare |<em>z</em>|<sup>2</sup> to 2<sup>2</sup> to
+    avoid nasty and slow square-root computations.  And don't use
+    <tt>Math.pow()</tt> to compute small integer powers; multiply them out
+    directly, otherwise your code will be very slow.
+    </p>
+    <p>
+    Finally, when you are iterating your function, if you hit
+    <tt>MAX_ITERATIONS</tt> then simply return -1 to indicate that the point
+    didn't escape outside of the boundary.
+    </p>
+    <p>
+    <b>IMPORTANT NOTE:</b>  Note that the equation to iterate is:
+    <em>z<sub>n</sub></em> = <em>z</em><sub><em>n</em>-1</sub><sup>2</sup> +
+    <em>c</em>.  That is, each iteration you are to compute
+    <em>z<sub>n</sub></em> from <em>z</em><sub><em>n</em>-1</sub>.  Students
+    frequently make the mistake of writing code like this:
+<pre>    int numIterations(double re, double im) {
+        ... (loop and stuff) ...
+
+        re = (some expression involving re and im);
+        im = (some expression involving re and im);
+
+        ...
+    }</pre>
+    Of course, the computation of <tt>im</tt> is incorrect since <tt>re</tt>
+    was changed by the previous step.
+    </p>
+    <p>
+    Instead, compute the value of <em>z<sub>n</sub></em> into a new set of
+    variables:
+<pre>        double nextRe = (some expression involving re and im);
+        double nextIm = (some expression involving re and im);
+
+        re = nextRe;
+        im = nextIm;</pre>
+    This will avoid bizarre results from being displayed.
+    </p>
+  </li>
+</ul>
+
+<h2>Putting It All Together</h2>
+
+<p>
+Finally we are ready to begin displaying fractals!  Now you will create a
+<tt>FractalExplorer</tt> class that allows you to examine different parts of
+the fractal by creating and showing a Swing GUI, and handling events caused by
+various user interactions.
+</p>
+
+<p>
+As you can see from the above images of the user interface, the Fractal
+Explorer is very simple, consisting of a <tt>JFrame</tt> containing a
+<tt>JImageDisplay</tt> object that displays the fractal, and a single
+<tt>JButton</tt> for resetting the display to show the entire fractal.  You can
+achieve this simple layout by setting the frame to have a <tt>BorderLayout</tt>,
+then putting the display in the center of the layout, and the reset button in
+the "south" part of the layout.
+</p>
+
+<ul>
+  <li>
+    Your <tt>FractalExplorer</tt> class will need to keep track of several
+    important fields for the program's state:
+    <ul>
+      <li>An integer "display size", which is simply the width and height of
+          the display in pixels.  (Our fractal display will be square.)</li>
+      <li>A <tt>JImageDisplay</tt> reference, so that we can update our
+          display from various methods, as we compute the fractal.</li>
+      <li>A <tt>FractalGenerator</tt> object.  We will use a base-class
+          reference so that we can show other kinds of fractals in the
+          future.</li>
+
+      <li>A <tt>Rectangle2D.Double</tt> object specifying the range of the
+          complex plane that we are currently displaying.</li>
+    </ul>
+    Of course, all of these fields will be private...
+  </li>
+
+  <li>
+    The class should have a constructor that takes a display-size as an
+    argument, then stores this value in the corresponding field, and also
+    initializes the range and fractal-generator objects.  Note that the
+    constructor shouldn't set up any Swing components; these will be set up in
+    the next method.
+  </li>
+
+  <li>
+    <p>
+    Provide a <tt>createAndShowGUI()</tt> method that initializes the Swing
+    GUI:  a <tt>JFrame</tt> containing a <tt>JImageDisplay</tt> object and a
+    button for resetting the display.  You should set the frame to use a
+    <tt>java.awt.BorderLayout</tt> for its contents; add the image-display
+    object in the <tt>BorderLayout.CENTER</tt> position, and the button in the
+    <tt>BorderLayout.SOUTH</tt> position.
+    </p>
+    <p>
+    You should also give the frame a suitable title for your application, and
+    set the frame's default close operation to "exit" (see the
+    <tt>JFrame.setDefaultCloseOperation()</tt> method).
+    </p>
+    <p>
+    Finally, after the UI components are initialized and laid out, include this
+    sequence of operations:
+
+    <pre>  frame.pack();
+  frame.setVisible(true);
+  frame.setResizable(false);</pre>
+
+    This will properly lay out the contents of the frame, cause it to be
+    visible (windows are not initially visible when they are created, so that
+    you can configure them before displaying them), and then disallow resizing
+    of the window.
+  </li>
+
+  <li>
+    You should implement a private helper method to display the fractal, e.g.
+    called <tt>drawFractal()</tt>.  This method should loop through every pixel
+    in the display (i.e. <em>x</em> will range from 0 to display-size, as will
+    <em>y</em>), and do the following:
+    <ul>
+      <li>
+        Compute the number of iterations for the corresponding coordinates in
+        the fractal's display area.  You can determine the floating-point
+        coordinates for a specific set of pixel coordinates using the
+        <tt>FractalGenerator.getCoord()</tt> helper method; for example, to
+        to get the x-coordinate corresponding to a pixel-X coordinate, you
+        would do this:
+        <pre>  // x is the pixel-coordinate; xCoord is the coordinate in the fractal's space
+  double xCoord = FractalGenerator.getCoord(range.x, range.x + range.width, displaySize, x);</pre>
+      </li>
+      <li>
+        If the number of iterations is -1 (i.e. the point doesn't escape, se
+        the pixel's color to black (rgb value 0).  Otherwise, you need to
+        choose a value based on the number of iterations.  We can actually use
+        the <a href="http://en.wikipedia.org/wiki/HSV_color_space">HSV color
+        space</a> for this:  as the hue ranges from 0 to 1, we get a smooth
+        sequence of colors from red through yellow, green, blue, violet, and
+        then back to red!  You can use an operation like this:
+        <pre>  float hue = 0.7f + (float) numIters / 200f;
+  int rgbColor = Color.HSBtoRGB(hue, 1f, 1f);</pre>
+        Of course, if you come up with some other interesting way to color
+        pixels based on the number of iterations, feel free to use it!
+      </li>
+      <li>
+        Of course, the display needs to be updated with the color for each
+        pixel, so you will use your <tt>drawPixel()</tt> operation from earlier.
+      </li>
+      <li>
+        Finally, when you have finished drawing <u>all</u> pixels, you need to
+        force the <tt>JImageDisplay</tt> to be repainted to match the current
+        contents of its image.  Do this by calling <tt>repaint()</tt> on the
+        component.  If you forget to do this, your display will never update!
+      </li>
+    </ul>
+  </li>
+
+  <li>
+    <p>
+    Create an inner class to handle <tt>java.awt.event.ActionListener</tt>
+    events from the reset button.  The handler simply needs to reset the range
+    to the initial range specified by the generator, and then draw the fractal.
+    </p>
+    <p>
+    Once you have completed this class, update your <tt>createAndShowGUI()</tt>
+    method to register an instance of this handler on the reset button.
+    </p>
+  </li>
+
+  <li>
+    <p>
+    Create another inner class to handle <tt>java.awt.event.MouseListener</tt>
+    events from the display.  Really you only need to handle mouse-click events,
+    so you should derive this inner class from the <tt>MouseAdapter</tt> AWT
+    class mentioned in the lecture 3 slides.  When this handler receives a
+    mouse-click event, it should map the click pixel-coordinates into the area
+    of the fractal that is being displayed, and then call the generator's
+    <tt>recenterAndZoomRange()</tt> method with the coordinates that were
+    clicked, and a scale of 0.5.  This way, just by clicking on a location in
+    the fractal display will zoom in on that location!
+    </p>
+    <p>
+    Of course, don't forget to redraw the fractal after you have altered the
+    area of the fractal being displayed.
+    </p>
+    <p>
+    After this class is done, update your <tt>createAndShowGUI()</tt> method to
+    register an instance of this handler on the fractal-display component.
+    </p>
+  </li>
+
+  <li>
+    Finally, you need to create a static <tt>main()</tt> method for the
+    fractal explorer so that it can be launched.  The main method will be very
+    simple at the moment:
+    <ul>
+      <li>Initialize a new <tt>FractalExplorer</tt> instance with a display-size
+          of 800 (or whatever suits you, but not too large).</li>
+      <li>Call <tt>createAndShowGUI()</tt> on the explorer object.</li>
+      <li>Call <tt>drawFractal()</tt> on the explorer to see the initial
+          view!</li>
+    </ul>
+  </li>
+</ul>
+
+<p>
+Once you have completed all these steps, you should be able to cruise around
+the Mandelbrot fractal looking at the amazing detail.  If you zoom in enough
+you will run into two interesting issues:
+</p>
+<ul>
+  <li>
+  First, you will eventually find that the level of detail eventually runs out;
+  this is because we would need more than 2000 iterations to find out if the
+  point is in the Mandelbrot set or not!  Of course, we might be tempted to
+  increase the maximum iterations, but then the black areas of the fractal
+  would <em>really</em> slow us down!
+  </li>
+
+  <li>
+  Second, if you zoom in <em>really</em> far, you will eventually run into
+  pixellated display output!  This is because you are running into the limit of
+  what double-precision floating-point values can represent.
+  </li>
+</ul>
+
+<p>
+You will probably also notice that it is kind of annoying how the entire
+display hangs while the fractal is being drawn.  This is something we will
+explore in future labs, as well as taking advantage of multiple processors to
+draw our fractals much faster.  But for now, once you have your Fractal
+Explorer completed (and well commented), you can submit your work to
+<a href="http://csman.cs.caltech.edu">csman</a>!
+</p>
+
+<hr />
+
+[end lab 3]
+<br />
+<font size="-1">
+  Copyright (c) 2003-2012, California Insitute of Technology.<br />
+  Last updated May 1, 2012.
+</font>
+
+</body>
+</html>
+

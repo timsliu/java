@@ -1,0 +1,272 @@
+<html>
+
+<head>
+  <title>CS11 Java - Lab 7</title>
+</head>
+
+<body>
+
+<h2>Java Lab 7:  A Better Web Crawler</h2>
+<!-- <em>Due Wednesday, February 28, 12:00pm.</em> -->
+
+<hr />
+
+<p>
+  Last week's web crawler was not particularly efficient.  This week you will
+  extend your web crawler to use Java threading, so that multiple web pages can
+  be crawled in parallel.  This will produce a significant performance
+  improvement, because the time each crawler thread spends waiting for network
+  operations to complete, can be overlapped with other processing operations in
+  other threads.
+</p>
+
+<p>
+  For a detailed introduction to multithreaded programming in Java (a
+  <em>very</em> complex topic!), you can read the threading tutorial
+  <a href="http://download.oracle.com/javase/tutorial/essential/concurrency/index.html" target="_blank">here</a>.
+  Most importantly, read
+  <a href="http://download.oracle.com/javase/tutorial/essential/concurrency/sync.html" target="_blank">this</a>
+  sub-section.
+</p>
+
+<h2>Extending the Web Crawler</h2>
+
+<p>
+  This week, you will extend and modify your program from last week:
+</p>
+
+<ol>
+  <li>
+    <p>
+      Implement a class called <tt>URLPool</tt>, which will store a list of all
+      URLs to be searched, along with the relative "level" of each of those URLs
+      (also known as a "search depth").  The first URL you search will be at
+      search depth 0, URLs found on that page will be search depth 1, etc.  You
+      should store URLs and their search depth together as instances of a class
+      called <tt>URLDepthPair</tt> like you did last week.  A
+      <tt>LinkedList</tt> is recommended for storing the items, since it can
+      perform the required operations very efficiently.
+    </p>
+    <p>
+      There should be a way for the user of the <tt>URLPool</tt> class to fetch
+      a URL-depth pair from the pool, and have it removed from the list
+      simultaneously.  There should also be a way to add a URL-depth pair to the
+      pool.  Both of these operations need to be thread-safe, since multiple
+      threads will be interacting with the <tt>URLPool</tt> at the same time.
+    </p>
+    <p>
+      <b>Unlike the FIFO example discussed in class, the URL pool shouldn't
+      have a maximum size limit.</b>  It really just needs the list of pending
+      URLs, the list of scanned URLs, and one other field discussed below.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      To perform the web crawling in multiple threads, you should create a
+      <tt>CrawlerTask</tt> class that implements the <tt>Runnable</tt>
+      interface.  Each <tt>CrawlerTask</tt> instance should have a reference to
+      <em>one</em> instance of the <code>URLPool</code> class described above.
+      (Note that <em>all</em> of the <tt>CrawlerTask</tt> instances share that
+      single pool!)  The crawler's job should be to:
+    </p>
+    <ol>
+      <li>Retrieve a URL-depth pair from the pool, waiting if one is not
+          immediately available.</li>
+      <li>Retrieve the web page referred to by the URL.</li>
+      <li>Search the page for more URLs.  For each URL found by the page, the
+          crawler task should add a new URL-depth pair to the URL pool.  The new
+          pairs should have a depth that is one more than the depth of the URL
+          that was retrieved in step 1.</li>
+      <li>Go back to step 1!</li>
+    </ol>
+    <p>
+      This should continue until there are no more (URL, depth) pairs in the
+      pool to crawl.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Since your web crawler will be spawning some number of crawler threads,
+      update your program to accept a third command-line parameter, specifying
+      the number of crawler threads to spawn.  Your main function will operate
+      something like this:
+    </p>
+
+    <ol>
+      <li>
+        Process command-line arguments.  Inform the user of any input errors.
+      </li>
+      <li>
+        Create an instance of the URL pool, and put the user-specified URL into
+        the pool with a depth of 0.
+      </li>
+      <li>
+        Create the number of crawler tasks (and threads to run them) requested
+        by the user.  Each crawler task should be given a reference to the
+        URL pool you instantiated.
+      </li>
+      <li>Wait for the web crawling to complete!  (More on this later.)</li>
+      <li>Print out the resulting list of URLs that have been found.</li>
+    </ol>
+  </li>
+
+  <li>
+    <p>
+      Make sure to <i>synchronize</i> your URL pool object at any and all
+      critical points, since it must now be thread-safe.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Don't have your crawlers continuously poll the URL pool for another URL
+      when it is empty.  Instead, have them wait efficiently when no URL is
+      available.  You should implement this by having the URL pool's "get URL"
+      method <tt>wait()</tt> internally, if no URL is currently available.
+      Correspondingly, the URL pool's "add URL" method should <tt>notify()</tt>
+      when a new URL is added to the pool.
+    </p>
+    <p>
+      <em>Note that crawler threads won't themselves be performing any of these
+      synchronize / wait / notify operations.</em>  This is for the same reason
+      that the URL pool hides the details of how URLs are stored and retrieved:
+      <b>encapsulation!</b>  Just like you want users of the URL pool to not
+      have to worry about implementation details, you also want them to not have
+      to worry about threading details.
+    </p>
+  </li>
+</ol>
+
+<h2>Design Advice</h2>
+
+<p>
+  Here are some helpful hints for implementing Lab 7!
+</p>
+
+<ul>
+  <li>
+    <p>
+      You can probably reuse big chunks of your code from last week with little
+      modification.  The <tt>URLDepthPair</tt> class probably won't need to be
+      modified at all.  Most of the web-crawling code can also be reused.  The
+      main differences are that the URL-download/page-crawl code is now in a
+      class that implements <tt>Runnable</tt>, and the code will now get and add
+      URLs on a <tt>URLPool</tt> instance.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      You need to synchronize access to the <tt>URLPool</tt>'s internal fields,
+      since it will be accessed from multiple threads.  As discussed in class,
+      the most straightforward approach is to use <tt>synchronized</tt> methods,
+      and avoid trying to code <tt>synchronized</tt> blocks within the class'
+      methods.  You don't need to synchronize the <tt>URLPool</tt> constructor!
+      Think about which methods need to be synchronized.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Write your <tt>URLPool</tt>'s methods to use <tt>wait()</tt> and
+      <tt>notify()</tt> so that crawler threads can efficiently wait for new
+      URLs to become available.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Have the <tt>URLPool</tt> manage which URLs go into the list of pending
+      URLs, based on the depth of each URL added to the pool.  If the URL's
+      depth is below the max depth, go ahead and add the URL-pair to the pending
+      queue.  If not, just add the URL to the "seen" list, and don't enqueue it
+      for later crawling.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      The trickiest part of this lab is to figure out a way to exit the program
+      once there are no more URLs to crawl (<i>i.e.</i> once the maximum search
+      depth has been reached).  When this happens, all the <tt>CrawlerTask</tt>
+      threads will be <tt>wait()</tt>ing for a new URL in the <tt>URLPool</tt>.
+      We recommend that your <tt>URLPool</tt> should keep track of how many
+      threads are waiting for a new URL, by adding an <tt>int</tt> field that is
+      incremented immediately before calling <tt>wait()</tt>, and that is
+      decremented immediately after <tt>wait()</tt> returns.
+    </p>
+
+    <p>
+      Once you have a count of the number of waiting threads, you can also
+      implement a (synchronized!) method that returns the number of waiting
+      threads.  When this count equals the total number of crawler threads, it's
+      time to exit the program.  You can monitor this count in your
+      <tt>main()</tt> function, and and call <tt>System.exit()</tt> to shut
+      down.  This is indeed another example of much-dreaded polling, but you can
+      mitigate the cost of polling by having your main method sleep for a
+      short time between checks so as not to waste too many processor cycles.
+      Somewhere between 0.1 second and 1 second is probably a good amount of
+      time to sleep.
+    </p>
+  </li>
+</ul>
+
+<h2>Extra Credit</h2>
+
+<ul>
+  <li>
+    <p>
+      Update your URL-depth pair to use the <tt>java.net.URL</tt> class, and
+      upgrade your web crawler to follow <em>relative</em> URLs as well as
+      absolute URLs.  This will require a bit of rework, but shouldn't be too
+      difficult.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Exiting your program by calling <tt>System.exit()</tt> isn't the cleanest
+      thing to do.  Figure out a cleaner way to exit the program once all the
+      crawling is done.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Implement a master listing of URLs that have been traversed, and avoid
+      revisiting old links.  Use one of the Java collection classes to make this
+      easy.  Some kind of set that supports constant-time lookups and inserts
+      would be most desirable.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Add another optional command line parameter to specify how long a
+      crawler thread should wait for a server to return the requested web page.
+      Use this time as a threshold for the <i>start</i> of page-receipt, and
+      then support an additional <code>maxPatience</code> parameter indicating
+      the point at which the the crawler task will abort crawling that page and
+      move on to the next one.
+    </p>
+  </li>
+
+  <li>
+    <p>
+      Go ahead and finish your Google-competitor since you did extra credit #4
+      from last week ;-)
+    </p>
+  </li>
+</ul>
+
+<hr />
+<font size="-1">
+  Copyright (c) 2004-2011, California Institute of Technology.<br />
+  Last updated on February 23, 2011.
+</font>
+
+</body>
+</html>
+
