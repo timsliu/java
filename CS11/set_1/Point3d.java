@@ -64,15 +64,32 @@ public class Point3d {
     }
 
     /** Returns the distance to another Point3d object. */
-    public double distanceTo(Point3d p1, Point3d p2) {
+    public double distanceTo(Point3d p1) {
     	double distance;
-    	distance = Math.pow(p1.getX() - p2.getX(), 2) + 
-    			   Math.pow(p1.getY() - p2.getY(), 2) + 
-    			   Math.pow(p1.getZ() - p2.getZ(), 2);
+    	distance = Math.pow(xCoord - p1.getX(), 2) + 
+    			   Math.pow(yCoord - p1.getY(), 2) + 
+    			   Math.pow(zCoord - p1.getZ(), 2);
     	distance = Math.sqrt(distance);
 
     	return distance;
 
+    }
+
+    /** Return whether object is identical to another Point3d object. */
+    public boolean equals(Object obj) {
+    	if (!(obj instanceof Point3d)) {
+    		return false;
+    	}
+
+        // typecast generic object to Point3d object
+    	Point3d p1 = (Point3d) obj;
+
+    	// check same object type and if each attribute (x, y, z) is the same
+    	if (p1.getX() == xCoord && p1.getY() == yCoord && p1.getZ() == zCoord) {
+    		return true;
+    	}
+    	// return false - two objects are not equal
+    	return false;
     }
 }
 

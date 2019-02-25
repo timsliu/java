@@ -18,11 +18,10 @@ import java.io.*;
  */
 
 public class Lab1 {
+    /* constant number of points */
+	final static int NUM_POINTS = 3;
 
-	/* main function */
-
-	public static int final NUM_POINTS = 3
-
+    /* main function */
 	public static void main(String[] args) {
 		// declare an array of Point3d
 		Point3d[] pArray;
@@ -30,13 +29,57 @@ public class Lab1 {
 		pArray = new Point3d[NUM_POINTS];
 
 		for(int i = 0; i < 3; i++) {
-			pArray[i].setX(getDouble());
-			pArray[i].setY(getDouble());
-			pArray[i].setZ(getDouble());
+            // loop getting coordinates for three points
+            System.out.print("Enter x" + (i+1) + ": ");
+			double x = (getDouble());
+            System.out.print("Enter y" + (i+1) + ": ");
+			double y = (getDouble());
+            System.out.print("Enter z" + (i+1) + ": ");
+			double z = (getDouble());
+            pArray[i] = new Point3d(x, y , z);
 		}
 
+        // call method to compute area
+        double area = computeArea(pArray[0], pArray[1], pArray[2]);
 
+        // -1 signifies an error occurred
+        if (area == -1.0) {
+            System.out.println("Error - points are not unique");
+        }
+        // otherwise print out the area
+        else {
+            System.out.println("Area of triangle: " + area);
+
+        }
+        return;
 	}
+
+    /** 
+     * computes the area of a triangle based on three Point3d
+     * objects
+     */
+
+    public static double computeArea(Point3d p1, Point3d p2, Point3d p3){
+
+        // check if any of the points are equal
+        if (p1.equals(p2) || p2.equals(p3) || p3.equals(p1)) {
+            // if points are equal then return -1 to signify error
+            return -1.0;
+        }
+
+ 
+        // get the distance between each of the points
+        double d1 = p1.distanceTo(p2);
+        double d2 = p2.distanceTo(p3);
+        double d3 = p3.distanceTo(p1);
+
+        //  Heron's formula for calculating area
+        double semi = (d1 + d2 + d3)/2;
+        double area = Math.sqrt(semi * (semi - d1) * (semi - d2) * (semi - d3));
+
+        return area;
+
+    }
 
     /**
      * Obtains one double-precision floating point number from
