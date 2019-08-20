@@ -1,0 +1,23 @@
+planning for Project-2
+
+RecessionForecast - model for forecasting GDP growth based on economic
+poll data
+    uses EconModel interface to generate two sets of growth forecasts
+    uses XChart to generate graphs of the GDP forecast
+
+PollData - class holding "survey data" from economists on future growth
+    implement sorting function, hash code, equals
+    type contains month in the future, average growth forecast, and
+    number of economists in poll
+    hash code not necessary, maybe will use for other projects
+
+EconModel - interface for aggregating data and generating averages
+
+EconModel1 - one class implementation of EconModel interface
+
+EconModel2 - second class implementation of EconModel
+
+GenerateData - class with static methods that create array of economic
+    data; mostly hard-coding the "data"
+
+
