@@ -1,3 +1,5 @@
+import java.util.*;
+
 // PollData class
 
 /*
@@ -5,7 +7,7 @@
  * poll data
  */
 
-public class PollData {
+public class PollData implements Comparable<PollData> {
     /** number of respondents to this poll */
 	private int numRespond;
 	/** forecast period (months from present) */
