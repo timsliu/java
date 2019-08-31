@@ -1,5 +1,8 @@
 /* EconModel interface for generating economic forecasts */
 
+import java.util.*;      // import util class
+
+
 public interface EconModel {
 	
 	/** add economic forecast data to class */
@@ -8,6 +11,9 @@ public interface EconModel {
 	/** create economic forecast based on interest rates */
 	void createForecast(float[] interestRates);
 
-	/* create a graph plotting the projected growth rate */
-	void createGraph();
+	/* return forecasted economic growth as a list */
+	LinkedList<Float> getForecast();
+
+	/* print name of model */
+	String getName();
 }

@@ -9,9 +9,9 @@ public class GenerateData {
 	private static int numPolls = 18;
 	private static int pollAttributes = 3;
 	private static double[][] pollArray= {
-		                          {25, 2, 2.0},
-        		                  {32, 4, 2.6},
-        		                  {17, 3, 2.3},
+		                          {25, 2, 3.4},
+        		                  {32, 4, 2.8},
+        		                  {17, 3, 3.9},
         		                  {45, 5, 1.7},
         		                  {10, 5, 1.3},
         		                  {18, 7, 1.8},
