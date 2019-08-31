@@ -8,6 +8,7 @@
  * Revision History
  * 08/29/19    Tim Liu    added getForecast and getName method signatures
  * 08/30/19    Tim Liu    wrote CreateForecast method
+ * 08/31/19    Tim Liu    changed getForecast to return as double array
  */
 
 import java.util.*;
@@ -23,8 +24,7 @@ public class YellenModel implements EconModel {
 	 *  Outputs:     None
 	 *  Attributes:  pollForecast populated w/ growth rate of first poll
 	 *               of each quarter
-	 */
-	
+	 */	
 	public void getData() {
 		// call method to receive data in a list
 		LinkedList<PollData> pollData = GenerateData.outputData();
@@ -84,16 +84,24 @@ public class YellenModel implements EconModel {
 		return;
 	}
 
-	/** Description: accessor that returns aggForecast
+	/** Description: accessor that returns aggForecast as double array
 	 *
 	 *  Output: aggForecast
 	 */
-	public LinkedList<Float> getForecast() {
+	public double[] getForecast() {
 		if (aggForecast == null) {
 			System.out.println("createForecast not called");
 			return null;
 		}
-		return aggForecast;
+		// convert list to Float array
+		Float[] floatArray = aggForecast.toArray(new Float[aggForecast.size()]);
+		// convert Float array to double array
+		double[] doubleArray = new double[floatArray.length];
+		// fill the array and cast Float to double
+		for (int i = 0; i < doubleArray.length; i++) {
+			doubleArray[i] = (double) floatArray[i];
+		}
+		return doubleArray;
 	}
 
 	/* Description: returns name of economic model 

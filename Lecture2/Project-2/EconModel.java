@@ -11,8 +11,8 @@ public interface EconModel {
 	/** create economic forecast based on interest rates */
 	void createForecast(float[] interestRates);
 
-	/* return forecasted economic growth as a list */
-	LinkedList<Float> getForecast();
+	/* return forecasted economic growth as a double array */
+	double[] getForecast();
 
 	/* print name of model */
 	String getName();

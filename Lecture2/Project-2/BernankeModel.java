@@ -1,13 +1,14 @@
 /* Name: BernankeModel
  *
- * Description: implementation of EconModel with simpler forecasting
- *              algorithm and data packaging than BernankeModel
+ * Description: implementation of EconModel that takes in data
+ *              and generates a fake model of economic growth
  *
  * Table of contents
  *
  * Revision History
  * 08/29/19    Tim Liu    added getForecast and getName methods
  * 08/29/19    Tim Liu    finished writing createForecast
+ * 08/31/19    Tim Liu    changed getForecast to return as double array
  */
 import java.util.*;      // import util class
 
@@ -110,16 +111,24 @@ public class BernankeModel implements EconModel {
 
 	}
 
-	/** Description: accessor that returns aggForecast
+	/** Description: accessor that returns aggForecast as double array
 	 *
 	 *  Output: aggForecast
 	 */
-	public LinkedList<Float> getForecast() {
+	public double[] getForecast() {
 		if (aggForecast == null) {
 			System.out.println("createForecast not called");
 			return null;
 		}
-		return aggForecast;
+		// convert list to Float array
+		Float[] floatArray = aggForecast.toArray(new Float[aggForecast.size()]);
+		// convert Float array to double array
+		double[] doubleArray = new double[floatArray.length];
+		// fill the array and cast Float to double
+		for (int i = 0; i < doubleArray.length; i++) {
+			doubleArray[i] = (double) floatArray[i];
+		}
+		return doubleArray;
 	}
 
 	/* Description: returns name of economic model 
